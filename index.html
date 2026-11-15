@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mars Jarvis</title>
+<style>
+:root{--bg:#070b16;--bg2:#0d1426;--glass:rgba(120,190,255,.07);--line:rgba(90,200,255,.25);--cy:#4fd8ff;--am:#ffb347;--tx:#e6f3ff;--mu:#8aa3bd;--ok:#5dffb0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#12315a 0,transparent 60%),var(--bg);color:var(--tx);font-family:"Rajdhani","Segoe UI",system-ui,sans-serif;font-size:17px;display:flex;flex-direction:column}
+main{flex:1;overflow-y:auto;padding:18px 16px 90px;max-width:760px;width:100%;margin:0 auto}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;backdrop-filter:blur(10px)}
+h1{font-size:28px;margin:0 0 4px;letter-spacing:.04em}
+h2{font-size:19px;margin:0 0 10px;color:var(--cy)}
+.mu{color:var(--mu)}
+.reactor{width:120px;height:120px;margin:10px auto 14px;border-radius:50%;border:2px solid var(--cy);position:relative;box-shadow:0 0 30px rgba(79,216,255,.5),inset 0 0 30px rgba(79,216,255,.3);animation:spin 14s linear infinite}
+.reactor::before,.reactor::after{content:"";position:absolute;border-radius:50%;inset:14px;border:2px dashed var(--am)}
+.reactor::after{inset:36px;border:2px solid var(--cy);background:radial-gradient(circle,#bff3ff 0,var(--cy) 40%,transparent 70%);animation:pulse 2.4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{opacity:.45}}
+@media(prefers-reduced-motion:reduce){.reactor,.reactor::after{animation:none}}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat b{display:block;font-size:30px;color:var(--am)}
+input,textarea,button{font:inherit;color:var(--tx)}
+input,textarea{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--cy)}
+button{background:rgba(79,216,255,.15);border:1px solid var(--cy);border-radius:10px;padding:10px 16px;cursor:pointer}
+button.x{border-color:#ff6b6b;background:rgba(255,107,107,.12);padding:6px 10px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.row span{flex:1;word-break:break-word}
+.done span{text-decoration:line-through;color:var(--mu)}
+.pri{font-size:13px;padding:2px 8px;border-radius:99px;border:1px solid var(--am);color:var(--am)}
+.pri.high{border-color:#ff6b6b;color:#ff6b6b}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:rgba(7,11,22,.92);border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(12px)}
+nav button{border:0;background:none;color:var(--mu);padding:8px 10px;font-size:15px}
+nav button.on{color:var(--cy);text-shadow:0 0 12px var(--cy)}
+section{display:none}section.on{display:block}
+.soon{color:var(--am);font-size:15px}
+</style>
+</head>
+<body>
+<main>
+<section id="home" class="on">
+ <div class="reactor" aria-hidden="true"></div>
+ <h1 id="greet" style="text-align:center">Good day.</h1>
+ <p class="mu" style="text-align:center;margin-top:0">Mars Jarvis online. Phase 1: foundation.</p>
+ <div class="stats">
+  <div class="panel stat"><b id="nNotes">0</b>Notes</div>
+  <div class="panel stat"><b id="nTasks">0</b>Open tasks</div>
+ </div>
+ <div class="panel"><h2>Status</h2>
+  <div>Memory: <span class="mu">this device (Drive sync is the next step)</span></div>
+  <div>Voice: <span class="mu">not connected yet</span></div>
+ </div>
+</section>
+
+<section id="memory">
+ <div class="panel"><h2>Notes</h2>
+  <input id="noteSearch" placeholder="Search notes" aria-label="Search notes">
+  <textarea id="noteText" rows="3" placeholder="Write a note"></textarea>
+  <button id="noteAdd">Save note</button>
+ </div>
+ <div class="panel" id="noteList"></div>
+</section>
+
+<section id="tasks">
+ <div class="panel"><h2>Tasks</h2>
+  <input id="taskText" placeholder="New task" aria-label="New task">
+  <div style="display:flex;gap:8px"><button id="pLow">Low</button><button id="pHigh">High</button><button id="taskAdd" style="margin-left:auto">Add task</button></div>
+ </div>
+ <div class="panel" id="taskList"></div>
+</section>
+
+<section id="voice">
+ <div class="panel"><h2>Voice Console</h2>
+  <p class="mu">Wake word "jarvis", push-to-talk and spoken replies arrive in step 3.</p>
+  <button id="testSpeak">Test voice</button>
+ </div>
+</section>
+
+<section id="settings">
+ <div class="panel"><h2>Settings</h2>
+  <p class="mu">Google Drive sign-in arrives in step 2.</p>
+  <button id="wipe" class="x">Erase notes and tasks</button>
+ </div>
+</section>
+</main>
+
+<nav id="nav">
+ <button data-s="home" class="on">Home</button>
+ <button data-s="memory">Memory</button>
+ <button data-s="tasks">Tasks</button>
+ <button data-s="voice">Voice</button>
+ <button data-s="settings">Settings</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+let db={notes:[],tasks:[]};
+let pri="low";
+try{const r=localStorage.getItem("jarvis-data");if(r)db=JSON.parse(r)}catch(e){}
+function save(){try{localStorage.setItem("jarvis-data",JSON.stringify(db))}catch(e){}render()}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function render(){
+ $("nNotes").textContent=db.notes.length;
+ $("nTasks").textContent=db.tasks.filter(t=>!t.done).length;
+ const q=$("noteSearch").value.toLowerCase();
+ const ns=db.notes.filter(n=>n.text.toLowerCase().includes(q));
+ $("noteList").innerHTML=ns.length?ns.map(n=>`<div class="row"><span>${esc(n.text)}</span><button class="x" data-dn="${n.id}">Delete</button></div>`).join(""):'<span class="mu">No notes yet. Write one above.</span>';
+ $("taskList").innerHTML=db.tasks.length?db.tasks.map(t=>`<div class="row ${t.done?"done":""}"><button data-ct="${t.id}">${t.done?"Undo":"Done"}</button><span>${esc(t.text)} <i class="pri ${t.p}">${t.p}</i></span><button class="x" data-dt="${t.id}">Delete</button></div>`).join(""):'<span class="mu">No tasks yet. Add one above.</span>';
+}
+$("noteAdd").onclick=()=>{const v=$("noteText").value.trim();if(!v)return;db.notes.unshift({id:Date.now(),text:v});$("noteText").value="";save()};
+$("taskAdd").onclick=()=>{const v=$("taskText").value.trim();if(!v)return;db.tasks.unshift({id:Date.now(),text:v,p:pri,done:false});$("taskText").value="";save()};
+$("pLow").onclick=()=>{pri="low";$("pLow").style.boxShadow="0 0 10px var(--cy)";$("pHigh").style.boxShadow="none"};
+$("pHigh").onclick=()=>{pri="high";$("pHigh").style.boxShadow="0 0 10px var(--cy)";$("pLow").style.boxShadow="none"};
+$("pLow").onclick();
+$("noteSearch").oninput=render;
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.dn){db.notes=db.notes.filter(n=>n.id!=b.dataset.dn);save()}
+ if(b.dataset.dt){db.tasks=db.tasks.filter(t=>t.id!=b.dataset.dt);save()}
+ if(b.dataset.ct){const t=db.tasks.find(t=>t.id==b.dataset.ct);t.done=!t.done;save()}
+});
+$("nav").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+ document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===b.dataset.s));
+ document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b))};
+$("wipe").onclick=()=>{if(confirm("Erase all notes and tasks on this device?")){db={notes:[],tasks:[]};save()}};
+$("testSpeak").onclick=()=>{try{speechSynthesis.speak(new SpeechSynthesisUtterance("Mars Jarvis online."))}catch(e){}};
+const h=new Date().getHours();$("greet").textContent=h<12?"Good morning.":h<18?"Good afternoon.":"Good evening.";
+render();
+</script>
+</body>
+</html>
